@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.Experimental.PlayerLoop;
 
 namespace Eosin
@@ -46,6 +47,12 @@ namespace Eosin
         JSONStorableBool _syncFovJSON;
         JSONStorableBool _enableCameraMotionInVRJSON;
 
+        JSONStorableFloat _camForwardFovRatioSlider;
+        JSONStorableFloat _camForwardOffsetSlider;
+        Vector3 _camForwardBasePosition;
+        float _camForwardBaseFov;
+        bool _camForwardInitialized;
+
         List<PlayerItem> _playerItems = new List<PlayerItem>();
 
         List<string> _CaptureRecordList = new List<string> { "New" };
@@ -62,7 +69,8 @@ namespace Eosin
         {
             get
             {
-                if (EnablePlayerRender)
+                // FOV sync (original function) is only active in Flat mode
+                if (EnablePlayerRender && renderModeIdx == 0)
                 {
                     return _syncFovJSON.val;
                 }
@@ -241,7 +249,48 @@ namespace Eosin
             {
                 _currentTitle = MMDTitle;
 
+                // Reset so next frame re-initializes base position and FOV for the new video
+                _camForwardInitialized = false;
+
                 GetCaptureRecords();
+            }
+        }
+
+        void LateUpdate()
+        {
+            // 如果没有播放器插件
+            if (PlayerPlugin == null)
+            {
+                RefreshPlayerPluginList();
+
+                return;
+            }
+
+            // 检查MMD是否发生了变化
+            CheckMMDChanged();
+
+            // FOV-based camera forward/backward movement (only when not in Flat mode)
+            if (_syncFovJSON.val && renderModeIdx != 0 && EnablePlayerRender)
+            {
+                float currentFov = PlayerFov;
+
+                // Initialize base position and FOV on first frame or after player change
+                if (!_camForwardInitialized)
+                {
+                    _camForwardBasePosition = containingAtom.mainController.transform.position;
+                    _camForwardBaseFov = currentFov;
+                    _camForwardInitialized = true;
+                }
+
+                float ratio = _camForwardFovRatioSlider.val;
+                float offset = _camForwardOffsetSlider.val;
+
+                // delta = (currentFov - baseFov) * ratio + offset
+                // FOV up → negative forward (backward); FOV down → positive forward
+                float delta = (currentFov - _camForwardBaseFov) * ratio + offset;
+
+                Vector3 forward = containingAtom.mainController.transform.forward;
+                containingAtom.mainController.transform.position = _camForwardBasePosition + forward * -delta;
             }
         }
 
@@ -430,6 +479,9 @@ namespace Eosin
 
             _syncFovJSON = SetupToggle("Sync FOV", true, true);
             RegisterBool(_syncFovJSON);
+
+            _camForwardFovRatioSlider = SetupSliderFloatWithRange("Cam Forward By FOV Ratio", 0.01f, 0.0001f, 0.1f, true);
+            _camForwardOffsetSlider = SetupSliderFloatWithRange("Cam Forward Offset", 0f, -5f, 5f, true);
 
             _enableCameraMotionInVRJSON = SetupToggle("Enabled Camera Motion for VR", false, true);
             RegisterBool(_enableCameraMotionInVRJSON);

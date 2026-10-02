@@ -1089,8 +1089,6 @@ namespace Eosin
                 {
                     // 设置分辨率为2:1
                     aspectRatioChooser.val = "16:9";
-                    // 停用FOV同步
-                    _syncFovJSON.val = true;
                 }
                 else
                 // 立体时
@@ -1098,8 +1096,6 @@ namespace Eosin
                 {
                     // 设置分辨率为2:1
                     aspectRatioChooser.val = "2:1";
-                    // 停用FOV同步
-                    _syncFovJSON.val = false;
 
                     SetVRRenderPosition(vrPositionModeChooser.val);
                 }
