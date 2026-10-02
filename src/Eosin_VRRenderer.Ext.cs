@@ -275,12 +275,10 @@ namespace Eosin
             {
                 float currentFov = PlayerFov;
 
-                // Initialize base position and FOV on first frame or after player change
+                // Initialize base position and FOV after one frame delay (to get correct position post-plugin Update)
                 if (!_camForwardInitialized)
                 {
-                    _camForwardBasePosition = containingAtom.mainController.control.position;
-                    _camForwardBaseFov = currentFov;
-                    _camForwardInitialized = true;
+                    StartCoroutine(CamForwardInitCoroutine(currentFov));
                 }
 
                 float ratio = currentFov < 40f ? _camForwardZoomInRatioSlider.val : _camForwardZoomOutRatioSlider.val;
@@ -293,6 +291,14 @@ namespace Eosin
                 Vector3 forward = containingAtom.mainController.transform.forward;
                 containingAtom.mainController.control.position = _camForwardBasePosition + forward * -delta;
             }
+        }
+
+        System.Collections.IEnumerator CamForwardInitCoroutine(float currentFov)
+        {
+            yield return null; // wait one full frame for mmd plugin Update to settle
+            _camForwardBasePosition = containingAtom.mainController.control.position;
+            _camForwardBaseFov = currentFov;
+            _camForwardInitialized = true;
         }
 
         void InitSaveDirectory()
