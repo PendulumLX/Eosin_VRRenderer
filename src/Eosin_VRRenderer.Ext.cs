@@ -278,7 +278,7 @@ namespace Eosin
                 // Initialize base position and FOV on first frame or after player change
                 if (!_camForwardInitialized)
                 {
-                    _camForwardBasePosition = containingAtom.mainController.transform.position;
+                    _camForwardBasePosition = containingAtom.mainController.control.position;
                     _camForwardBaseFov = currentFov;
                     _camForwardInitialized = true;
                 }
@@ -291,7 +291,7 @@ namespace Eosin
                 float delta = (currentFov - _camForwardBaseFov) * ratio + offset;
 
                 Vector3 forward = containingAtom.mainController.transform.forward;
-                containingAtom.mainController.transform.position = _camForwardBasePosition + forward * -delta;
+                containingAtom.mainController.control.position = _camForwardBasePosition + forward * -delta;
             }
         }
 
