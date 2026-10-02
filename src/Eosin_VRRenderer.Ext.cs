@@ -47,7 +47,8 @@ namespace Eosin
         JSONStorableBool _syncFovJSON;
         JSONStorableBool _enableCameraMotionInVRJSON;
 
-        JSONStorableFloat _camForwardFovRatioSlider;
+        JSONStorableFloat _camForwardZoomInRatioSlider;
+        JSONStorableFloat _camForwardZoomOutRatioSlider;
         JSONStorableFloat _camForwardOffsetSlider;
         Vector3 _camForwardBasePosition;
         float _camForwardBaseFov;
@@ -282,7 +283,7 @@ namespace Eosin
                     _camForwardInitialized = true;
                 }
 
-                float ratio = _camForwardFovRatioSlider.val;
+                float ratio = currentFov < 40f ? _camForwardZoomInRatioSlider.val : _camForwardZoomOutRatioSlider.val;
                 float offset = _camForwardOffsetSlider.val;
 
                 // delta = (currentFov - baseFov) * ratio + offset
@@ -480,7 +481,8 @@ namespace Eosin
             _syncFovJSON = SetupToggle("Sync FOV", true, true);
             RegisterBool(_syncFovJSON);
 
-            _camForwardFovRatioSlider = SetupSliderFloatWithRange("Cam Forward By FOV Ratio", 0.01f, 0.0001f, 0.1f, true);
+            _camForwardZoomInRatioSlider = SetupSliderFloatWithRange("Cam Forward Zoom In Ratio (FOV < 40)", 0.08f, 0.0001f, 0.5f, true);
+            _camForwardZoomOutRatioSlider = SetupSliderFloatWithRange("Cam Forward Zoom Out Ratio (FOV > 40)", 0.01f, 0.0001f, 0.5f, true);
             _camForwardOffsetSlider = SetupSliderFloatWithRange("Cam Forward Offset", 0f, -5f, 5f, true);
 
             _enableCameraMotionInVRJSON = SetupToggle("Enabled Camera Motion for VR", false, true);
