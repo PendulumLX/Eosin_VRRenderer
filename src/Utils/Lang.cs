@@ -303,6 +303,7 @@ namespace noone77521
             this["FOV Source"] = "FOV来源";
             this["Motion Source"] = "运动来源";
             this["Viewport Camera"] = "视口镜头";
+            this["Main Camera"] = "主摄像头";
             this["MMD Player"] = "MMD播放器";
             this["Cam Forward Zoom In Ratio (FOV < 40)"] = "镜头前移比率 (FOV < 40)";
             this["Cam Forward Zoom Out Ratio (FOV > 40)"] = "镜头后移比率 (FOV > 40)";

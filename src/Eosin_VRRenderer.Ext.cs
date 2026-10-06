@@ -53,7 +53,9 @@ namespace Eosin
         /// <summary>
         /// 运动来源的固定选项，其余选项为场景中的Atom
         /// </summary>
+        /// <remarks>MOTION_SOURCE_VIEWPORT 是存档值，改动会导致已有设置失效；显示文本用 MOTION_SOURCE_VIEWPORT_LABEL</remarks>
         private const string MOTION_SOURCE_VIEWPORT = "Viewport Camera";
+        private const string MOTION_SOURCE_VIEWPORT_LABEL = "Main Camera";
 
         JSONStorableBool _enableControlPlayerJSON;
 
@@ -559,7 +561,7 @@ namespace Eosin
 
             // 运动来源：默认视口镜头，其余为场景中的非Person Atom
             var motionSources = new List<string>() { MOTION_SOURCE_VIEWPORT };
-            var motionSourceDisplays = new List<string>() { Lang.Get(MOTION_SOURCE_VIEWPORT) };
+            var motionSourceDisplays = new List<string>() { Lang.Get(MOTION_SOURCE_VIEWPORT_LABEL) };
 
             foreach (var atom in GetSceneAtoms())
             {
