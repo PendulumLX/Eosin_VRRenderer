@@ -44,7 +44,9 @@ namespace Eosin
         /// <summary>
         /// FOV来源选项
         /// </summary>
+        /// <remarks>FOV_SOURCE_NAMES 是存档值，改动会导致已有设置失效；显示文本用 FOV_SOURCE_LABELS</remarks>
         private static readonly List<string> FOV_SOURCE_NAMES = new List<string>() { "Viewport Camera", "MMD Player" };
+        private static readonly List<string> FOV_SOURCE_LABELS = new List<string>() { "Main Camera", "MMD Player" };
 
         private const int FOV_SOURCE_VIEWPORT = 0;
         private const int FOV_SOURCE_PLAYER = 1;
@@ -557,7 +559,8 @@ namespace Eosin
             _syncFovJSON = SetupToggle("Sync FOV", true, true);
             RegisterBool(_syncFovJSON);
 
-            _fovSourceJSON = SetupStringChooser("FOV Source", FOV_SOURCE_NAMES, DEFAULT_FOV_SOURCE_IDX, true);
+            _fovSourceJSON = Utils.SetupStringChooser(this, "FOV Source", Lang.Get("FOV Source"),
+                FOV_SOURCE_NAMES, FOV_SOURCE_LABELS.Select(label => Lang.Get(label)).ToList(), DEFAULT_FOV_SOURCE_IDX, true);
 
             // 运动来源：默认视口镜头，其余为场景中的非Person Atom
             var motionSources = new List<string>() { MOTION_SOURCE_VIEWPORT };
