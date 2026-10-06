@@ -576,8 +576,11 @@ namespace Eosin
                 }
             }
 
-            _motionSourceJSON = Utils.SetupStringChooser(this, "Motion Source", Lang.Get("Motion Source"),
-                motionSources, motionSourceDisplays, 0, true);
+            // 直接构造再配合可筛选弹窗，与 Camera Target 一致；
+            // 若改用 Utils.SetupStringChooser 会额外创建一个普通弹窗，导致重复控件
+            _motionSourceJSON = new JSONStorableStringChooser("Motion Source", motionSources,
+                motionSourceDisplays, MOTION_SOURCE_VIEWPORT, Lang.Get("Motion Source"));
+            RegisterStringChooser(_motionSourceJSON);
 
             _motionSourcePopup = CreateFilterablePopup(_motionSourceJSON, true);
             _motionSourcePopup.label = Lang.Get(_motionSourceJSON.name);
