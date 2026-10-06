@@ -300,6 +300,13 @@ namespace noone77521
             this["Render for MMDShow"] = "MMDShow 渲染设定";
             this["Enable Control Player"] = "允许控制播放器";
             this["Sync FOV"] = "同步FOV";
+            this["FOV Source"] = "FOV来源";
+            this["Motion Source"] = "运动来源";
+            this["Viewport Camera"] = "视口镜头";
+            this["MMD Player"] = "MMD播放器";
+            this["Cam Forward Zoom In Ratio (FOV < 40)"] = "镜头前移比率 (FOV < 40)";
+            this["Cam Forward Zoom Out Ratio (FOV > 40)"] = "镜头后移比率 (FOV > 40)";
+            this["Cam Forward Offset"] = "镜头前移偏移";
             this["NoSet"] = "无设置";
             this["Sit"] = "坐姿";
             this["Stand"] = "站姿";

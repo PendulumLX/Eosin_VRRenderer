@@ -41,10 +41,27 @@ namespace Eosin
     }
     public partial class VRRenderer
     {
+        /// <summary>
+        /// FOV来源选项
+        /// </summary>
+        private static readonly List<string> FOV_SOURCE_NAMES = new List<string>() { "Viewport Camera", "MMD Player" };
+
+        private const int FOV_SOURCE_VIEWPORT = 0;
+        private const int FOV_SOURCE_PLAYER = 1;
+        private const int DEFAULT_FOV_SOURCE_IDX = FOV_SOURCE_PLAYER;
+
+        /// <summary>
+        /// 运动来源的固定选项，其余选项为场景中的Atom
+        /// </summary>
+        private const string MOTION_SOURCE_VIEWPORT = "Viewport Camera";
+
         JSONStorableBool _enableControlPlayerJSON;
 
         JSONStorableStringChooser _playerChooserJSON;
         JSONStorableBool _syncFovJSON;
+        JSONStorableStringChooser _fovSourceJSON;
+        JSONStorableStringChooser _motionSourceJSON;
+        UIDynamicPopup _motionSourcePopup;
         JSONStorableBool _enableCameraMotionInVRJSON;
 
         JSONStorableFloat _camForwardZoomInRatioSlider;
@@ -112,6 +129,76 @@ namespace Eosin
                 }
 
                 return 40f;
+            }
+        }
+
+        /// <summary>
+        /// 视口镜头的FOV
+        /// </summary>
+        float ViewportFov
+        {
+            get
+            {
+                var viewportCamera = Camera.main;
+
+                if (viewportCamera != null)
+                {
+                    return viewportCamera.fieldOfView;
+                }
+
+                return 40f;
+            }
+        }
+
+        /// <summary>
+        /// 当前使用的FOV，由 FOV Source 下拉框决定
+        /// </summary>
+        float CurrentFov
+        {
+            get
+            {
+                if (_fovSourceJSON == null)
+                {
+                    return PlayerFov;
+                }
+
+                return _fovSourceJSON.val == FOV_SOURCE_NAMES[FOV_SOURCE_VIEWPORT]
+                    ? ViewportFov
+                    : PlayerFov;
+            }
+        }
+
+        /// <summary>
+        /// 提供基准位置和朝向的对象，由 Motion Source 下拉框决定
+        /// </summary>
+        /// <remarks>只读取该对象的位置和朝向，不会移动它</remarks>
+        Transform MotionSource
+        {
+            get
+            {
+                var choice = _motionSourceJSON?.val;
+
+                // 未选择或不可用时，回退到本插件所在的Atom
+                if (string.IsNullOrEmpty(choice) || choice == MOTION_SOURCE_VIEWPORT)
+                {
+                    return Camera.main != null
+                        ? Camera.main.transform
+                        : containingAtom.mainController.transform;
+                }
+
+                var atom = SuperController.singleton.GetAtomByUid(choice);
+
+                // 下拉框中已排除Person，此处再次判断以防存档中残留的旧值
+                if (atom == null || atom.type == "Person")
+                {
+                    return containingAtom.mainController.transform;
+                }
+
+                var sourceTransform = atom.GetStorableByID("control")?.transform;
+
+                return sourceTransform != null
+                    ? sourceTransform
+                    : containingAtom.mainController.transform;
             }
         }
 
@@ -237,6 +324,31 @@ namespace Eosin
 
             // 检查MMD是否发生了变化
             CheckMMDChanged();
+
+            // FOV-based camera forward/backward movement (only when not in Flat mode)
+            if (_syncFovJSON.val && renderModeIdx != 0 && EnablePlayerRender)
+            {
+                float currentFov = CurrentFov;
+                var motionSource = MotionSource;
+
+                // Initialize base position and FOV on first frame or after player change
+                if (!_camForwardInitialized)
+                {
+                    _camForwardBasePosition = motionSource.position;
+                    _camForwardBaseFov = currentFov;
+                    _camForwardInitialized = true;
+                }
+
+                float ratio = currentFov < 40f ? _camForwardZoomInRatioSlider.val : _camForwardZoomOutRatioSlider.val;
+                float offset = _camForwardOffsetSlider.val;
+
+                // delta = (currentFov - baseFov) * ratio + offset
+                // FOV up → negative forward (backward); FOV down → positive forward
+                float delta = (currentFov - _camForwardBaseFov) * ratio + offset;
+
+                Vector3 forward = motionSource.forward;
+                containingAtom.mainController.transform.position = _camForwardBasePosition + forward * -delta;
+            }
         }
 
         /// <summary>
@@ -255,50 +367,6 @@ namespace Eosin
 
                 GetCaptureRecords();
             }
-        }
-
-        void LateUpdate()
-        {
-            // 如果没有播放器插件
-            if (PlayerPlugin == null)
-            {
-                RefreshPlayerPluginList();
-
-                return;
-            }
-
-            // 检查MMD是否发生了变化
-            CheckMMDChanged();
-
-            // FOV-based camera forward/backward movement (only when not in Flat mode)
-            if (_syncFovJSON.val && renderModeIdx != 0 && EnablePlayerRender)
-            {
-                float currentFov = PlayerFov;
-
-                // Initialize base position and FOV after one frame delay (to get correct position post-plugin Update)
-                if (!_camForwardInitialized)
-                {
-                    StartCoroutine(CamForwardInitCoroutine(currentFov));
-                }
-
-                float ratio = currentFov < 40f ? _camForwardZoomInRatioSlider.val : _camForwardZoomOutRatioSlider.val;
-                float offset = _camForwardOffsetSlider.val;
-
-                // delta = (currentFov - baseFov) * ratio + offset
-                // FOV up → negative forward (backward); FOV down → positive forward
-                float delta = (currentFov - _camForwardBaseFov) * ratio + offset;
-
-                Vector3 forward = containingAtom.mainController.transform.forward;
-                containingAtom.mainController.control.position = _camForwardBasePosition + forward * -delta;
-            }
-        }
-
-        System.Collections.IEnumerator CamForwardInitCoroutine(float currentFov)
-        {
-            yield return null; // wait one full frame for mmd plugin Update to settle
-            _camForwardBasePosition = containingAtom.mainController.control.position;
-            _camForwardBaseFov = currentFov;
-            _camForwardInitialized = true;
         }
 
         void InitSaveDirectory()
@@ -486,6 +554,34 @@ namespace Eosin
 
             _syncFovJSON = SetupToggle("Sync FOV", true, true);
             RegisterBool(_syncFovJSON);
+
+            _fovSourceJSON = SetupStringChooser("FOV Source", FOV_SOURCE_NAMES, DEFAULT_FOV_SOURCE_IDX, true);
+
+            // 运动来源：默认视口镜头，其余为场景中的非Person Atom
+            var motionSources = new List<string>() { MOTION_SOURCE_VIEWPORT };
+            var motionSourceDisplays = new List<string>() { Lang.Get(MOTION_SOURCE_VIEWPORT) };
+
+            foreach (var atom in GetSceneAtoms())
+            {
+                // 排除人物Atom
+                if (atom != null && atom.uid != null && atom.type != "Person")
+                {
+                    motionSources.Add(atom.uid);
+                    motionSourceDisplays.Add(atom.uid);
+                }
+            }
+
+            _motionSourceJSON = Utils.SetupStringChooser(this, "Motion Source", Lang.Get("Motion Source"),
+                motionSources, motionSourceDisplays, 0, true);
+
+            _motionSourcePopup = CreateFilterablePopup(_motionSourceJSON, true);
+            _motionSourcePopup.label = Lang.Get(_motionSourceJSON.name);
+
+            // 切换来源后需要重新捕获基准位置
+            _motionSourceJSON.setCallbackFunction += (string v) =>
+            {
+                _camForwardInitialized = false;
+            };
 
             _camForwardZoomInRatioSlider = SetupSliderFloatWithRange("Cam Forward Zoom In Ratio (FOV < 40)", 0.08f, 0.0001f, 0.5f, true);
             _camForwardZoomOutRatioSlider = SetupSliderFloatWithRange("Cam Forward Zoom Out Ratio (FOV > 40)", 0.01f, 0.0001f, 0.5f, true);
