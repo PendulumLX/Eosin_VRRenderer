@@ -676,6 +676,17 @@ namespace Eosin
         {
             Utils.OnInitUI(CreateUIElement, this);
 
+            // MMDShow 区块放在最前；若此处抛出异常，下方控件字段将全部为null，
+            // 故用try/catch兜底，避免异常逃逸
+            try
+            {
+                BuildExtUI();
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e, "VRRenderer::BuildUI.BuildExtUI:");
+            }
+
             previewChooser = SetupToggle("Preview", true, true);
             previewStaysOpenChooser = SetupToggle("Preview Stays Open", true, true);
             previewAudioFromCamPos = SetupToggle("Preview Audio From Cam Pos", true, true);
@@ -1151,16 +1162,6 @@ namespace Eosin
                     myFileFormat = DEFAULT_FORMAT;
                 myNeedSetup = true;
             };
-
-            // 放在最后：若此处抛出异常，不会导致上面已创建的控件字段为null
-            try
-            {
-                BuildExtUI();
-            }
-            catch (Exception e)
-            {
-                LogUtil.LogError(e, "VRRenderer::BuildUI.BuildExtUI:");
-            }
         }
 
         private void SetVRRenderPosition(string v)
