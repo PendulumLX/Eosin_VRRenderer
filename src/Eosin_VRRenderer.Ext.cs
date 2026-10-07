@@ -65,7 +65,6 @@ namespace Eosin
         JSONStorableBool _syncFovJSON;
         JSONStorableStringChooser _fovSourceJSON;
         JSONStorableStringChooser _motionSourceJSON;
-        UIDynamicPopup _motionSourcePopup;
         JSONStorableBool _enableCameraMotionInVRJSON;
 
         JSONStorableFloat _camForwardZoomInRatioSlider;
@@ -92,7 +91,7 @@ namespace Eosin
             get
             {
                 // FOV sync (original function) is only active in Flat mode
-                if (EnablePlayerRender && renderModeIdx == 0)
+                if (_syncFovJSON != null && EnablePlayerRender && renderModeIdx == 0)
                 {
                     return _syncFovJSON.val;
                 }
@@ -310,6 +309,12 @@ namespace Eosin
         {
             get
             {
+                // UI尚未构建完成时（例如构建过程中发生异常），此处会被每帧的Update()调用
+                if (_enableControlPlayerJSON == null || _playerChooserJSON == null)
+                {
+                    return false;
+                }
+
                 return _enableControlPlayerJSON.val && _playerChooserJSON.val != "None";
             }
         }
@@ -563,24 +568,27 @@ namespace Eosin
                 FOV_SOURCE_NAMES, FOV_SOURCE_LABELS.Select(label => Lang.Get(label)).ToList(), DEFAULT_FOV_SOURCE_IDX, true);
 
             // 运动来源：默认视口镜头，其余为场景中的非Person Atom
+            // 与 Camera Target 一致，使用 GetAtomUIDs 枚举场景Atom
             var motionSources = new List<string>() { MOTION_SOURCE_VIEWPORT };
             var motionSourceDisplays = new List<string>() { Lang.Get(MOTION_SOURCE_VIEWPORT_LABEL) };
 
-            foreach (var atom in GetSceneAtoms())
+            foreach (string id in SuperController.singleton.GetAtomUIDs())
             {
+                if (id == null)
+                    continue;
+
                 // 排除人物Atom
-                if (atom != null && atom.uid != null && atom.type != "Person")
-                {
-                    motionSources.Add(atom.uid);
-                    motionSourceDisplays.Add(atom.uid);
-                }
+                var atom = SuperController.singleton.GetAtomByUid(id);
+
+                if (atom == null || atom.type == "Person")
+                    continue;
+
+                motionSources.Add(atom.uid);
+                motionSourceDisplays.Add(atom.uid);
             }
 
             _motionSourceJSON = Utils.SetupStringChooser(this, "Motion Source", Lang.Get("Motion Source"),
                 motionSources, motionSourceDisplays, 0, true);
-
-            _motionSourcePopup = CreateFilterablePopup(_motionSourceJSON, true);
-            _motionSourcePopup.label = Lang.Get(_motionSourceJSON.name);
 
             // 切换来源后需要重新捕获基准位置
             _motionSourceJSON.setCallbackFunction += (string v) =>

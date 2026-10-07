@@ -676,8 +676,6 @@ namespace Eosin
         {
             Utils.OnInitUI(CreateUIElement, this);
 
-            BuildExtUI();
-
             previewChooser = SetupToggle("Preview", true, true);
             previewStaysOpenChooser = SetupToggle("Preview Stays Open", true, true);
             previewAudioFromCamPos = SetupToggle("Preview Audio From Cam Pos", true, true);
@@ -1153,6 +1151,16 @@ namespace Eosin
                     myFileFormat = DEFAULT_FORMAT;
                 myNeedSetup = true;
             };
+
+            // 放在最后：若此处抛出异常，不会导致上面已创建的控件字段为null
+            try
+            {
+                BuildExtUI();
+            }
+            catch (Exception e)
+            {
+                LogUtil.LogError(e, "VRRenderer::BuildUI.BuildExtUI:");
+            }
         }
 
         private void SetVRRenderPosition(string v)
@@ -1862,7 +1870,7 @@ namespace Eosin
                 }
 
 
-                if (leaveEmptySphereVisible.val)
+                if (leaveEmptySphereVisible != null && leaveEmptySphereVisible.val)
                 {
                     if (sphereObject != null)
                     {
@@ -1893,7 +1901,7 @@ namespace Eosin
                 if (renderEndedLastFrame)
                 {
                     renderEndedLastFrame = false;
-                    if (!bFlatRender && previewChooser.val)
+                    if (!bFlatRender && previewChooser != null && previewChooser.val)
                     {
                         BeginVRPreview();
                         myNeedSetup = true;
