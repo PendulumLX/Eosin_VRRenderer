@@ -71,8 +71,6 @@ namespace Eosin
         JSONStorableFloat _camForwardZoomInRatioSlider;
         JSONStorableFloat _camForwardZoomOutRatioSlider;
         JSONStorableFloat _camForwardOffsetSlider;
-        float _camForwardBaseFov;
-        bool _camForwardInitialized;
 
         List<PlayerItem> _playerItems = new List<PlayerItem>();
 
@@ -340,19 +338,13 @@ namespace Eosin
                 float currentFov = CurrentFov;
                 var motionSource = MotionSource;
 
-                // Initialize base FOV on first frame or after player change
-                if (!_camForwardInitialized)
-                {
-                    _camForwardBaseFov = currentFov;
-                    _camForwardInitialized = true;
-                }
-
                 float ratio = currentFov < 40f ? _camForwardZoomInRatioSlider.val : _camForwardZoomOutRatioSlider.val;
                 float offset = _camForwardOffsetSlider.val;
 
-                // delta = (currentFov - baseFov) * ratio + offset
-                // FOV up → negative forward (backward); FOV down → positive forward
-                float delta = (currentFov - _camForwardBaseFov) * ratio + offset;
+                // 以40为基准：低于40前移，高于40后移
+                // delta = (40 - currentFov) * ratio + offset
+                // FOV低于40 → delta为正 → 沿forward前移；高于40 → delta为负 → 后移
+                float delta = (40f - currentFov) * ratio + offset;
 
                 Vector3 forward = motionSource.forward;
 
@@ -373,9 +365,6 @@ namespace Eosin
             if (isChanged)
             {
                 _currentTitle = MMDTitle;
-
-                // Reset so next frame re-initializes base position and FOV for the new video
-                _camForwardInitialized = false;
 
                 GetCaptureRecords();
             }
@@ -599,12 +588,6 @@ namespace Eosin
 
             _motionSourcePopup = CreateFilterablePopup(_motionSourceJSON, true);
             _motionSourcePopup.label = Lang.Get(_motionSourceJSON.name);
-
-            // 切换来源后需要重新捕获基准位置
-            _motionSourceJSON.setCallbackFunction += (string v) =>
-            {
-                _camForwardInitialized = false;
-            };
 
             _camForwardZoomInRatioSlider = SetupSliderFloatWithRange("Cam Forward Zoom In Ratio (FOV < 40)", 0.08f, 0.0001f, 0.5f, true);
             _camForwardZoomOutRatioSlider = SetupSliderFloatWithRange("Cam Forward Zoom Out Ratio (FOV > 40)", 0.01f, 0.0001f, 0.5f, true);
