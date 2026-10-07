@@ -65,6 +65,7 @@ namespace Eosin
         JSONStorableBool _syncFovJSON;
         JSONStorableStringChooser _fovSourceJSON;
         JSONStorableStringChooser _motionSourceJSON;
+        UIDynamicPopup _motionSourcePopup;
         JSONStorableBool _enableCameraMotionInVRJSON;
 
         JSONStorableFloat _camForwardZoomInRatioSlider;
@@ -589,8 +590,15 @@ namespace Eosin
                 motionSourceDisplays.Add(atom.uid);
             }
 
-            _motionSourceJSON = Utils.SetupStringChooser(this, "Motion Source", Lang.Get("Motion Source"),
-                motionSources, motionSourceDisplays, 0, true);
+            // 直接构造再配合可筛选弹窗，与 Camera Target 一致。
+            // 不可改用 Utils.SetupStringChooser：它内部已创建滚动弹窗，
+            // 再调用 CreateFilterablePopup 会返回null，导致下一行空引用异常
+            _motionSourceJSON = new JSONStorableStringChooser("Motion Source", motionSources,
+                motionSourceDisplays, MOTION_SOURCE_VIEWPORT, Lang.Get("Motion Source"));
+            RegisterStringChooser(_motionSourceJSON);
+
+            _motionSourcePopup = CreateFilterablePopup(_motionSourceJSON, true);
+            _motionSourcePopup.label = Lang.Get(_motionSourceJSON.name);
 
             // 切换来源后需要重新捕获基准位置
             _motionSourceJSON.setCallbackFunction += (string v) =>
