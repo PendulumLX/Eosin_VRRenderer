@@ -807,7 +807,7 @@ namespace Eosin
             popup.label = Lang.Get(focusObject.name);
 
             // 前移距离限制：以Camera Target为参照，限制前移的最近距离，防止穿模
-            _camForwardDistanceLimitSlider = SetupSliderFloatWithRange("Forward Distance Limit", 0f, 0f, 10f, true);
+            _camForwardDistanceLimitSlider = SetupSliderFloatWithRange("Forward Distance Limit", 0f, 0f, 10f, false);
 
             JSONStorableFloat flatHorizontalFovChooser = SetupSliderFloat("Flat Horizontal FOV", flatHorizontalFov, 0.1f, 179.9f, false);
             JSONStorableFloat flatSupersamplingChooser = SetupSliderInt("Flat Supersampling Multiplier", flatSupersampling, 1, 8, false);
