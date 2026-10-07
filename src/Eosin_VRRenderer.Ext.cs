@@ -70,7 +70,6 @@ namespace Eosin
         JSONStorableFloat _camForwardZoomInRatioSlider;
         JSONStorableFloat _camForwardZoomOutRatioSlider;
         JSONStorableFloat _camForwardOffsetSlider;
-        Vector3 _camForwardBasePosition;
         float _camForwardBaseFov;
         bool _camForwardInitialized;
 
@@ -340,10 +339,9 @@ namespace Eosin
                 float currentFov = CurrentFov;
                 var motionSource = MotionSource;
 
-                // Initialize base position and FOV on first frame or after player change
+                // Initialize base FOV on first frame or after player change
                 if (!_camForwardInitialized)
                 {
-                    _camForwardBasePosition = motionSource.position;
                     _camForwardBaseFov = currentFov;
                     _camForwardInitialized = true;
                 }
@@ -356,7 +354,11 @@ namespace Eosin
                 float delta = (currentFov - _camForwardBaseFov) * ratio + offset;
 
                 Vector3 forward = motionSource.forward;
-                containingAtom.mainController.transform.position = _camForwardBasePosition + forward * -delta;
+
+                // 位置与旋转都实时跟随运动来源，位置再沿其前向轴按FOV偏移
+                containingAtom.mainController.transform.SetPositionAndRotation(
+                    motionSource.position + forward * -delta,
+                    motionSource.rotation);
             }
         }
 

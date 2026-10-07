@@ -130,7 +130,9 @@ Handshake: `BeginRender()` → `ReadyToPlayerRender()` (saves & overwrites the o
 
 ## Cam Forward by FOV
 
-Non-flat-mode dolly in `Ext.cs` `FixedUpdate()`: reads a FOV, compares it to a captured baseline, and offsets the plugin's own atom along the motion source's forward axis. Gated on `_syncFovJSON.val && renderModeIdx != 0 && EnablePlayerRender` — so it needs Sync FOV on, a non-Flat/non-BVH mode, **and** a player plugin selected.
+Non-flat-mode dolly in `Ext.cs` `FixedUpdate()`: the plugin's own atom **tracks the motion source continuously** — both position and rotation are copied every tick, and the position is then displaced along the motion source's forward axis by a FOV-driven delta. Gated on `_syncFovJSON.val && renderModeIdx != 0 && EnablePlayerRender` — so it needs Sync FOV on, a non-Flat/non-BVH mode, **and** a player plugin selected.
+
+Only the **FOV baseline** is captured, not the position: `delta = (currentFov - _camForwardBaseFov) * ratio + offset`, then `SetPositionAndRotation(motionSource.position + motionSource.forward * -delta, motionSource.rotation)`. `_camForwardInitialized` guards the baseline and is cleared on an MMD title change and on switching Motion Source. Consequence: while this is active the atom cannot be moved or aimed by hand, and with the viewport camera as source the atom's heading follows the camera wherever it looks.
 
 - **FOV Source** — viewport camera (`Camera.main.fieldOfView`) or the MMD plugin. No `setCallbackFunction`, so switching it mid-dolly computes one frame against a stale `_camForwardBaseFov` and the atom jumps. Known gap.
 - **Motion Source** — supplies base position and forward direction, read-only. The viewport camera or any non-Person atom (Person is filtered out of the list; the resolver also rejects it, since a saved value could name one). Has a `setCallbackFunction` that clears `_camForwardInitialized` so switching re-anchors.
