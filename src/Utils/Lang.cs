@@ -308,6 +308,7 @@ namespace noone77521
             this["Cam Forward Zoom In Ratio (FOV < 40)"] = "镜头前移比率 (FOV < 40)";
             this["Cam Forward Zoom Out Ratio (FOV > 40)"] = "镜头后移比率 (FOV > 40)";
             this["Cam Forward Offset"] = "镜头前移偏移";
+            this["Forward Distance Limit"] = "镜头前移距离限制";
             this["NoSet"] = "无设置";
             this["Sit"] = "坐姿";
             this["Stand"] = "站姿";

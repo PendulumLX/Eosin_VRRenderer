@@ -348,6 +348,24 @@ namespace Eosin
 
                 Vector3 forward = motionSource.forward;
 
+                // 前移距离限制：设置了Camera Target时，前移距离上限为目标前向深度减去限制值。
+                // 仅限制前移；FOV>40时delta为负，天然不受此限制，可自由后退。
+                if (delta > 0f && cameraTarget != null && _camForwardDistanceLimitSlider != null)
+                {
+                    // depth为Camera Target在运动来源前向轴上的深度
+                    float depth = Vector3.Dot(cameraTarget.position - motionSource.position, forward);
+
+                    // depth<=0时前移不会拉近目标，无需限制
+                    if (depth > 0f)
+                    {
+                        float limit = Mathf.Max(0f, _camForwardDistanceLimitSlider.val);
+
+                        // Mathf.Min取上限而非覆盖：FOV算出的前移距离仍然生效，只是不得超过该上限。
+                        // 已在限距内时上限为0，前移为0，绝不后推
+                        delta = Mathf.Min(delta, Mathf.Max(0f, depth - limit));
+                    }
+                }
+
                 // 位置与旋转都实时跟随运动来源，位置再沿其前向轴按FOV偏移
                 containingAtom.mainController.transform.SetPositionAndRotation(
                     motionSource.position + forward * delta,

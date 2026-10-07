@@ -534,6 +534,7 @@ namespace Eosin
         bool handledPre, handledPost;
         float panoramicVerticalFov = 75f;
         Transform cameraTarget;
+        JSONStorableFloat _camForwardDistanceLimitSlider;
         bool unfrozeOnStart;
         Atom myContainingAtom;
         JSONStorableBool recordAudioChooser;
@@ -804,6 +805,10 @@ namespace Eosin
             RegisterStringChooser(focusObject);
             UIDynamicPopup popup = CreateFilterablePopup(focusObject, false);
             popup.label = Lang.Get(focusObject.name);
+
+            // 前移距离限制：以Camera Target为参照，限制前移的最近距离，防止穿模
+            _camForwardDistanceLimitSlider = SetupSliderFloatWithRange("Forward Distance Limit", 0f, 0f, 10f, true);
+
             JSONStorableFloat flatHorizontalFovChooser = SetupSliderFloat("Flat Horizontal FOV", flatHorizontalFov, 0.1f, 179.9f, false);
             JSONStorableFloat flatSupersamplingChooser = SetupSliderInt("Flat Supersampling Multiplier", flatSupersampling, 1, 8, false);
             JSONStorableStringChooser kernelModeChooser = SetupStringChooser("Flat Kernel Mode", KERNEL_NAMES, myKernelMode, false);
