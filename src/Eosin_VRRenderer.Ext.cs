@@ -343,14 +343,14 @@ namespace Eosin
 
                 // 以40为基准：低于40前移，高于40后移
                 // delta = (40 - currentFov) * ratio + offset
-                // FOV低于40 → delta为正 → 沿forward前移；高于40 → delta为负 → 后移
+                // delta为沿forward的距离：低于40时delta为正（沿forward前移），高于40时为负（后移）
                 float delta = (40f - currentFov) * ratio + offset;
 
                 Vector3 forward = motionSource.forward;
 
                 // 位置与旋转都实时跟随运动来源，位置再沿其前向轴按FOV偏移
                 containingAtom.mainController.transform.SetPositionAndRotation(
-                    motionSource.position + forward * -delta,
+                    motionSource.position + forward * delta,
                     motionSource.rotation);
             }
         }
